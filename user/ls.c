@@ -27,8 +27,8 @@ ls(char *path)
 {
   char buf[512], *p;
   int fd;
-  struct dirent de;
-  struct stat st;
+  struct dirent de;//question: what is dirent and dir status
+  struct stat st; 
 
   if((fd = open(path, 0)) < 0){
     fprintf(2, "ls: cannot open %s\n", path);
@@ -51,9 +51,11 @@ ls(char *path)
       printf("ls: path too long\n");
       break;
     }
+    //put path in buff , and add a slash after it 
     strcpy(buf, path);
     p = buf+strlen(buf);
     *p++ = '/';
+    //we can consider that a directory file is just an array of dirent 
     while(read(fd, &de, sizeof(de)) == sizeof(de)){
       if(de.inum == 0)
         continue;
