@@ -274,6 +274,8 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+  //copy mask from p to c
+  np->mask= p->mask;
 
   np->parent = p;
 

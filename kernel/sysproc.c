@@ -106,3 +106,10 @@ sys_trace(void)
   myproc()->mask = mask;
   return 0;
 }
+
+uint64
+sys_sysinfo(void)
+{
+  printf("sysinfo has been called in kernel\n");
+  return 0;
+}
