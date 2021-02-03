@@ -440,3 +440,31 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+//add vmprint in vm.c
+void 
+vmprint(pagetable_t pgtb,int level){
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pgtb[i];       
+    if((pte & PTE_V) ){
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+       switch(level){
+        case 0:
+          printf("..");
+          break;
+        case 1:
+          printf(".. ..");
+          break;
+        case 2:
+          printf(".. .. ..");
+          break;
+        default:
+          printf("error level is %d",level);
+      }
+      printf("%d: pte %p pa %p\n",i,pte,child);
+      if(level<2)
+      vmprint((pagetable_t)child,level + 1) ;
+    }  
+  }
+}
