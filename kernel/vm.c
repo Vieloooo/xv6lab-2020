@@ -21,6 +21,7 @@ extern char trampoline[]; // trampoline.S
 void
 kvminit()
 {
+  //allocate a page for the kptb
   kernel_pagetable = (pagetable_t) kalloc();
   memset(kernel_pagetable, 0, PGSIZE);
 

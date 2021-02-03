@@ -44,6 +44,7 @@
 // the kernel expects there to be RAM
 // for use by the kernel and user pages
 // from physical address 0x80000000 to PHYSTOP.
+// int xv6, the maxium physical ram is 128 MB, from 0x80000000 to 0x86400000
 #define KERNBASE 0x80000000L
 #define PHYSTOP (KERNBASE + 128*1024*1024)
 

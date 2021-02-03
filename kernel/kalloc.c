@@ -43,6 +43,7 @@ freerange(void *pa_start, void *pa_end)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
+// kfree func emptys 4kb space from pa and add the pa to the head of the freelist
 void
 kfree(void *pa)
 {
