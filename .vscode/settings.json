@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "exception": "cpp",
+        "new": "cpp",
+        "user.h": "c",
+        "fcntl.h": "c",
+        "types.h": "c",
+        "stat.h": "c",
+        "fs.h": "c"
+    }
+}
