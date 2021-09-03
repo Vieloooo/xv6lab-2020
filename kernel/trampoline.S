@@ -26,6 +26,8 @@ uservec:
         
 	# swap a0 and sscratch
         # so that a0 is TRAPFRAME
+        # csr: control status register rw: read and write 
+        # read sscratch to a0, and write a0 to sscratch 
         csrrw a0, sscratch, a0
 
         # save the user registers in TRAPFRAME
@@ -38,6 +40,7 @@ uservec:
         sd t2, 88(a0)
         sd s0, 96(a0)
         sd s1, 104(a0)
+        # a0 haven't been saved in 112(a0) 
         sd a1, 120(a0)
         sd a2, 128(a0)
         sd a3, 136(a0)
@@ -61,9 +64,11 @@ uservec:
         sd t6, 280(a0)
 
 	# save the user a0 in p->trapframe->a0
+        # read sscratch to t0 then save it 
         csrr t0, sscratch
         sd t0, 112(a0)
-
+        #switch to kernel 
+        # what if the malicious 
         # restore kernel stack pointer from p->trapframe->kernel_sp
         ld sp, 8(a0)
 

@@ -6,6 +6,7 @@
 # exec(init, argv)
 .globl start
 start:
+# arguement in a0,a1
         la a0, init
         la a1, argv
         li a7, SYS_exec
