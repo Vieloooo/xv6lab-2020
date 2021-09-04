@@ -7,7 +7,7 @@
 #include "defs.h"
 
 struct cpu cpus[NCPU];
-
+//global proc list
 struct proc proc[NPROC];
 
 struct proc *initproc;
@@ -719,4 +719,21 @@ void procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+//retrive the proc list and count the using process
+uint64 getUsedProcNumber(void)
+{
+  uint64 ans = 0;
+  struct proc *p;
+  for (p = proc; p < &proc[NPROC]; p++)
+  {
+    acquire(&p->lock);
+    if (p->state != UNUSED)
+    {
+      //printf("%d\n", p->state);
+      ans++;
+    }
+    release(&p->lock);
+  }
+  return ans;
 }

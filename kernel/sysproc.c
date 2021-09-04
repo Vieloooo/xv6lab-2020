@@ -6,7 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
-
+#include "sysinfo.h"
 uint64
 sys_exit(void)
 {
@@ -110,5 +110,29 @@ sys_trace(void)
   printf("pid: %d origin mask is %d\n", p->pid, p->mask);
   p->mask = n;
   printf("add mask:%d to the proc: %d\n", n, p->pid);
+  return 0;
+}
+uint64
+sys_sysinfo(void)
+{
+  //printf("sysinfo ok\n");
+  //malloc a sysinfo struct
+  struct sysinfo myinfo;
+  myinfo.nproc = getUsedProcNumber();
+  myinfo.freemem = getFreeSize();
+  //printf("free bytes:%d free page%d\n", myinfo.freemem, myinfo.nproc);
+  //copy myinfo out from kernel
+  struct proc *p = myproc();
+  uint64 st;
+  //get the user destination addr from arg
+  if (argaddr(0, &st) < 0)
+  {
+    return -1;
+  }
+  printf("va: %d\n", st);
+  if (copyout(p->pagetable, st, (char *)&myinfo, sizeof(myinfo)) < 0)
+  {
+    return -1;
+  }
   return 0;
 }
