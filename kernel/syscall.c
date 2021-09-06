@@ -103,7 +103,7 @@ extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
 extern uint64 sys_trace(void);
 extern uint64 sys_sysinfo(void);
-
+extern uint64 sys_ps(void);
 static uint64 (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
     [SYS_exit] sys_exit,
@@ -128,13 +128,14 @@ static uint64 (*syscalls[])(void) = {
     [SYS_close] sys_close,
     [SYS_trace] sys_trace,
     [SYS_sysinfo] sys_sysinfo,
+    [SYS_ps] sys_ps,
 };
 
 void syscall(void)
 {
-  char commonName[23][10] = {
+  char commonName[24][10] = {
       "fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat", "chdir", "dup", "getpid", "sbrk", "sleep", "updtime",
-      "open", "write", "mknod", "unlink", "link", "mkdir", "close", "trace", "sysinfo"};
+      "open", "write", "mknod", "unlink", "link", "mkdir", "close", "trace", "sysinfo", "ps"};
 
   int num;
   struct proc *p = myproc();

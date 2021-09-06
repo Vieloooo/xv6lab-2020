@@ -28,6 +28,8 @@ int uptime(void);
 int trace(int);
 //add sysinfo
 int sysinfo(struct sysinfo *);
+//add ps call
+int ps(void);
 // ulib.c
 int stat(const char *, struct stat *);
 char *strcpy(char *, const char *);

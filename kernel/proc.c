@@ -737,3 +737,14 @@ uint64 getUsedProcNumber(void)
   }
   return ans;
 }
+void listProc(void)
+{
+  struct proc *p;
+  for (p = proc; p < &proc[NPROC]; p++)
+  {
+    acquire(&p->lock);
+    printf("pid:%d|st:%d|userPT:%d|kernPT:%d\n", p->pid, p->state, p->pagetable, &p->trapframe->kernel_satp);
+    release(&p->lock);
+  }
+  return;
+}

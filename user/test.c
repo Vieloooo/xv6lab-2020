@@ -4,11 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-    trace(1);
-    int pid = fork();
-    if (pid == 0)
-    {
-        trace(1);
-    }
+    ps();
+    printf("doen\n");
     exit(0);
 }

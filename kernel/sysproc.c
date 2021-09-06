@@ -136,3 +136,8 @@ sys_sysinfo(void)
   }
   return 0;
 }
+uint64 sys_ps(void)
+{
+  listProc();
+  return 0;
+}
