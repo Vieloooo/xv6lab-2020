@@ -21,7 +21,6 @@ int exec(char *path, char **argv)
   struct proghdr ph;
   pagetable_t pagetable = 0, oldpagetable;
   struct proc *p = myproc();
-  printf("exec first pid :%d\n", p->pid);
   begin_op();
 
   if ((ip = namei(path)) == 0)
@@ -69,7 +68,7 @@ int exec(char *path, char **argv)
 
   p = myproc();
   uint64 oldsz = p->sz;
-  printf("pid: %d|proc size after load seg to the proc %d\n", p->pid, oldsz);
+  //printf("pid: %d|proc size after load seg to the proc %d\n", p->pid, oldsz);
   // Allocate two pages at the next page boundary.
   // Use the second as the user stack.
   sz = PGROUNDUP(sz);
@@ -122,8 +121,13 @@ int exec(char *path, char **argv)
   p->trapframe->epc = elf.entry; // initial program counter = main
   p->trapframe->sp = sp;         // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
-  printf("pid: %d|proc size after new the proc %d\n", p->pid, oldsz);
+  //printf("pid: %d|proc size after new the proc %d\n", p->pid, oldsz);
   // Allocate two pages at the next page boundary.
+  //vmprint(p->pagetable);
+  //vmprint((pagetable_t)p->trapframe->kernel_satp);
+  //vmprint(p->kpt);
+  if (p->pid == 1)
+    vmprint(p->pagetable);
   return argc; // this ends up in a0, the first argument to main(argc, argv)
 
 bad:

@@ -128,7 +128,21 @@ found:
     release(&p->lock);
     return 0;
   }
-
+  // basic user's kernel page table
+  p->kpt = NewKernelPgtbl();
+  if (p->kpt == 0)
+  {
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
+  //set kernel stack
+  char *pa = kalloc();
+  if (pa == 0)
+    panic("kalloc");
+  uint64 va = KSTACK((int)(p - proc));
+  ukvmmap(p->kpt, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+  p->kstack = va;
   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
@@ -149,6 +163,19 @@ freeproc(struct proc *p)
   p->trapframe = 0;
   if (p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
+  //free kernel stack
+  if (p->kstack)
+  {
+    pte_t *pte = walk(p->kpt, p->kstack, 0);
+    if (pte == 0)
+      panic("freeproc->free kernel stack");
+    kfree((void *)PTE2PA(*pte));
+  }
+  p->kstack = 0;
+  //free kernel pt
+  if (p->kpt)
+    proc_freeKpt(p->kpt);
+  //vmprint(p->kpt);
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
@@ -203,7 +230,26 @@ void proc_freepagetable(pagetable_t pagetable, uint64 sz)
   uvmunmap(pagetable, TRAPFRAME, 1, 0);
   uvmfree(pagetable, sz);
 }
-
+void proc_freeKpt(pagetable_t pt)
+{
+  //not free pysical addr, just free the page table
+  for (int i = 0; i < 512; i++)
+  {
+    pte_t pte = pt[i];
+    if (pte & PTE_V)
+    {
+      pt[i] = 0;
+      if ((pte & (PTE_R | PTE_W | PTE_X)) == 0)
+      {
+        uint64 child = PTE2PA(pte);
+        proc_freeKpt((pagetable_t)child);
+      }
+    }
+  }
+  //printf("clear user kernel pgtbl\n");
+  //vmprint(pt);
+  kfree((void *)pt);
+}
 // a user program that calls exec("/init")
 // od -t xC initcode
 uchar initcode[] = {

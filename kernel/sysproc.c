@@ -47,10 +47,10 @@ sys_sbrk(void)
   if (argint(0, &n) < 0)
     return -1;
   addr = myproc()->sz;
-  printf("pid: %dorigin mem: %d\n", myproc()->pid, addr);
+  //printf("pid: %dorigin mem: %d\n", myproc()->pid, addr);
   if (growproc(n) < 0)
     return -1;
-  printf("pid: %dmem add: %d\n", myproc()->pid, n);
+  //printf("pid: %dmem add: %d\n", myproc()->pid, n);
   return addr;
 }
 
