@@ -103,4 +103,12 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  // for tick handler 
+  struct spinlock sigLock;
+  int tickNum;                 //tick number to trigger the handler
+  int ticked;                  //tick number since last signalarm call 
+  uint64 tickHandler ;          //tick handler entry in user's vm page table
+  struct trapframe backup;
+  int handling;
+  
 };
