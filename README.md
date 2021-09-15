@@ -4,8 +4,10 @@
 2. syscall pass
 3. pgtbl has problems 
     1. proc.sz is the memory usage for each process (not include trampline and trapframe)
-    2. trapframe use 2 pages under VAMAX
-    ```c
+    2. in other word, proc.sz means the biggest user's vitural address that process is currently using except for trapframe and tramplines 
+    3. trapframe use 2 pages under VAMAX
+    4. test sbrk(4096) for 3 times, output below:
+    ```
         pid: 3 mem add: 4096, new mem: 16384
         page table 0x0000000087e6a000
         ..0: pte 0x0000000021f99801 pa 0x0000000087e66000
