@@ -1,9 +1,9 @@
-# xv6lab-2020
-## personal repo to learn mit 6.S081(6.828) xv6 and git usage.
+# Mit6.S081-XV6lab-2020
+## Personal repo to learn MIT 6.S081(6.828) xv6.
 ## Here are some notes below:
-1. util pass
+1. util pass 
     1. fd redirect is the key part in primes. 
-3. syscall pass
+3. syscall pass in branch new_syscall
     1. impliment ps syscall in branch new_syscall
 5. pgtbl has problems 
     1. proc.sz is the memory usage for each process (not include trampline and trapframe)
@@ -52,8 +52,8 @@
         ......511: pte 0x0000000020001c4b pa 0x0000000080007000
     ```
 4. trap pass
-    1. what if handler wanna to pass arguement in the signal handler function 
-    2. should use lock to lock handle function(or atomic action), not a normal integer
+    1. what if handler wanna to pass arguements in the signal handler function 
+    2. use spinlock to lock handle function(or atomic action) instead of a normal integer 
 5. lazy pass 
     1. mappage() will automatically allocate space for undeclared virtual address, so we only need to allocate the space for the physical memory to be mapped. 
     2. 2 kinds of pte
