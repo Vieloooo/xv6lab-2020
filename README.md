@@ -1,8 +1,11 @@
 # xv6lab-2020
-## personal repo to learn mit 6.0s081 xv6 and git usage.
+## personal repo to learn mit 6.S081(6.828) xv6 and git usage.
+## Here are some notes below:
 1. util pass
-2. syscall pass
-3. pgtbl has problems 
+    1. fd redirect is the key part in primes. 
+3. syscall pass
+    1. impliment ps syscall in branch new_syscall
+5. pgtbl has problems 
     1. proc.sz is the memory usage for each process (not include trampline and trapframe)
     2. in other word, proc.sz means the biggest user's vitural address -1 that process is currently using except for trapframe and tramplines 
     3. trapframe use 2 pages under VAMAX
