@@ -68,11 +68,43 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
-    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
-    printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-    p->killed = 1;
+    // handle page fault 
+    if (r_scause()==13 || r_scause() == 15){
+      uint64 va = r_stval();
+      if (va >p->sz){
+        // va out of range 
+        printf("usertrap(): va out of memory size\n");
+        p->killed = 1;
+      }else if (va < PGROUNDDOWN(p->trapframe->sp)){
+        // va in read only address (under stack)
+        printf("usertrap(): va under guard page\n");
+        p->killed = 1;
+      }else{
+        // what if we just map only 1 page for the va ?
+        va = PGROUNDDOWN(va);
+        char *mem = kalloc();
+        if(mem == 0){
+          // no enough memory for alloc
+          printf("usertrap(): no enough memory for new page\n");
+          p->killed = 1;
+          goto end;
+        }
+        memset(mem, 0, PGSIZE);
+        if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
+          // map err 
+          printf("usertrap(): mapping va to pa fail\n");
+          kfree(mem);
+          p->killed = 1;
+        }        
+      }
+    }else{
+      printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+      printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+      p->killed = 1;
+    }
+    
   }
-
+end:
   if(p->killed)
     exit(-1);
 
