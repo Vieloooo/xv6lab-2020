@@ -4,7 +4,7 @@
 2. syscall pass
 3. pgtbl has problems 
     1. proc.sz is the memory usage for each process (not include trampline and trapframe)
-    2. in other word, proc.sz means the biggest user's vitural address that process is currently using except for trapframe and tramplines 
+    2. in other word, proc.sz means the biggest user's vitural address -1 that process is currently using except for trapframe and tramplines 
     3. trapframe use 2 pages under VAMAX
     4. test sbrk(4096) for 3 times, output below:
     ```
@@ -48,7 +48,16 @@
         ......510: pte 0x0000000021fb40c7 pa 0x0000000087ed0000
         ......511: pte 0x0000000020001c4b pa 0x0000000080007000
     ```
-5. trap pass
+4. trap pass
     1. what if handler wanna to pass arguement in the signal handler function 
     2. should use lock to lock handle function(or atomic action), not a normal integer
-6.
+5. lazy pass 
+    1. mappage() will automatically allocate space for undeclared virtual address, so we only need to allocate the space for the physical memory to be mapped. 
+    2. 2 kinds of pte
+        1. 0 pte
+        2. not valid pte. 
+    3. In the free procedure at the end of process's lifetime:
+        1. unmap the pte and the physical address 
+        2. free pa 
+        3. set pte to 0 
+        4. free the page table from the root. 
