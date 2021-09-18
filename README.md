@@ -64,3 +64,24 @@
         2. free pa 
         3. set pte to 0 
         4. free the page table from the root. 
+6. copy-write fork 
+    1. how to active usertrap when write bits to cow va? 
+        1. disable w_en in pte 
+    2. fork()
+        1. just map the new pgtbl to old physical address. 
+        2. new a physical pages mapping count 
+        3. add the counter of the mapped page 
+    3. handle user trap
+        1. if the trap is writing to cow mem:
+        2. new a page 
+        3. remap pte and enable write 
+    4. handle shrink user space 
+        1. unmap the pgtbl and physical page 
+        2. decreate 
+        3. free physical page goto:6.6
+    5. alloc new memory (sbrk etc.)
+        1. allocate like before 
+        2. but add the page counter 
+    6. free physical page 
+        1. if page counter >1: decrease counter 
+        2. if page counter =1; decrease counter and add this page to free list 
