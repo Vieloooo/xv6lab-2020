@@ -67,63 +67,27 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else {
-    if (r_scause()== 13 || r_scause() == 15){
-      //printf("cccoooowwww\n");
-       uint64 va = r_stval();
-      if (va >= MAXVA)
-      {
-        printf("va too big\n");
-        p->killed = 1;
-        goto over;
-      }
-      if (va <= PGROUNDDOWN(p->trapframe->sp) && va>= PGROUNDUP(p->trapframe->sp -PGSIZE))
-      {
-        printf("va lower than guard page\n");
+  } else if(r_scause() == 15 || r_scause() == 13){
+    // handle cow 
+     
+     printf("cccoooowwww\n");
+     uint64 va = r_stval();
+      if (va >= MAXVA ){
         p->killed = 1;
         goto over;
       }
       va = PGROUNDDOWN(va);
-      //handle cow 
-      // get pte 
-      pte_t * pte = walk(p->pagetable,va,0);
-      if (pte == 0 ){
-        printf("null pte address\n");
-        p->killed = 1;
-        goto over;
-      }     
-      // if pte is valid, not write, cow 
-      if (!((*pte) & PTE_V) ){
+      if (check_cow(p->pagetable,va)!=0){
         p->killed = 1;
         goto over;
       }
-      if ((*pte) & PTE_COW){
-        // handle real cow write 
-        printf("handle cow va: %p, pte:%p ,pid :%d\n",va, *pte,p->pid);
-        uint64 pa = PTE2PA(*pte);
-        char *mem;
-        if ((mem= kalloc())==0){
-          printf("kalloc in cow error\n");
-          p->killed = 1;
-          goto over;
-        }
-        memmove(mem, (char*)pa, PGSIZE);
-        uint64 flags = PTE_FLAGS(*pte);
-        flags = (flags | PTE_W )& (~PTE_COW);
-        *pte = 0;
-        subMap(pa);
-        if(mappages(p->pagetable, va, PGSIZE, pa,flags ) != 0){
-          printf("mapping error in cow\n");
-          p->killed = 1;
-          goto over;
-        }
-      }else{
-        p->killed = 1;
-        printf("some trap but not cow \n");
-        goto over;
-      }
-    }
-    
+      handle_cow(p->pagetable, va);
+      
+  }else{
+    //p->killed =1;
+    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+    printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
+    goto over;
   }
 over:
   if(p->killed)
@@ -135,7 +99,35 @@ over:
 
   usertrapret();
 }
+// check pte if valid and has cow flag 
+int check_cow(pagetable_t pt,uint64 va){
+  pte_t *pte = walk(pt,va,0);
+  if (!pte)
+    return -1;
+  if ((*pte & PTE_V) ==0)
+    return -1;
+ 
+  return 0;
+}
 
+// handler for cow 
+void handle_cow(pagetable_t pt,uint64 va){
+  pte_t *pte = walk(pt,va,0);
+   if (*pte & PTE_COW){
+    pte_t *pte = walk(pt,va,0);
+    uint64 flags = PTE_FLAGS(*pte);
+    uint64 pa = PTE2PA(*pte);
+    char *mem;
+    if ((mem=kalloc())==0){
+      panic("no memory for kalloc");
+    }
+    memmove(mem,(char*)pa,PGSIZE);
+    flags = (flags | PTE_W) & (PTE_COW);
+    kfree((void*)pa);
+    *pte = PA2PTE((uint64)mem) | flags;
+   }
+  
+}
 //
 // return to user space
 //

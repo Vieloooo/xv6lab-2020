@@ -8,7 +8,7 @@
 #include "spinlock.h"
 #include "riscv.h"
 #include "defs.h"
-
+static uint64 pgNumber = PHYSTOP>>12;
 void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
@@ -24,7 +24,7 @@ struct {
 } kmem;
 struct {
   struct spinlock lock ;
-  int  pageMapNum[PHYSTOP/PGSIZE];
+  int  pageMapNum[PHYSTOP>>12];
 } pgMap;
 
 
@@ -33,8 +33,10 @@ addMap(uint64 pa){
   pa = PGROUNDDOWN(pa);
   if (pa<PHYSTOP){
     acquire(&pgMap.lock);
-    pgMap.pageMapNum[pa/PGSIZE]++;
+    pgMap.pageMapNum[pa>>12]++;
+    //printf("addmap to %p,total times:%d\n",pa,pgMap.pageMapNum[pa>>12]);
     release(&pgMap.lock);
+  
   }
 
 }
@@ -43,7 +45,9 @@ subMap(uint64 pa){
   pa = PGROUNDDOWN(pa);
   if (pa<PHYSTOP){
     acquire(&pgMap.lock);
-    pgMap.pageMapNum[pa/PGSIZE]--;
+    pgMap.pageMapNum[pa>>12]--;
+    //printf("submap to %p,total times:%d\n",pa,pgMap.pageMapNum[pa>>12]);
+
     release(&pgMap.lock);
   }
 }
@@ -53,7 +57,7 @@ getMap(uint64 pa){
   pa = PGROUNDDOWN(pa);
   if (pa<PHYSTOP){
     acquire(&pgMap.lock);
-    n = pgMap.pageMapNum[pa/PGSIZE];
+    n = pgMap.pageMapNum[pa>>12];
     release(&pgMap.lock);
   }
   return n ;
@@ -66,11 +70,16 @@ kinit()
   // add page mapping numbers lock 
   initlock(&pgMap.lock,"page mapping number");
   //pgMap.pageMapNum[PHYSTOP/PGSIZE] = 0;
-  for (int i = 0; i < PGROUNDUP(PHYSTOP) / PGSIZE; i++){
+   
+   
+  for (int i = 0; i <pgNumber; i++){
     pgMap.pageMapNum[i] = 0;
   }
-
   freerange(end, (void*)PHYSTOP);
+  for (int i = 0; i< pgNumber ; i++){
+    pgMap.pageMapNum[i] = 0;
+    
+  }
 }
 
 void
@@ -93,13 +102,12 @@ kfree(void *pa)
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
-  int mapn = getMap((uint64)pa);
-  if (mapn>1){
-    subMap((uint64)pa);
-    return ;
-  }
+  subMap((uint64)pa);
+  if (getMap((uint64)pa) > 0 )
+    return;
+  
   // Fill with junk to catch dangling refs.
-    memset(pa, 1, PGSIZE);
+    memset(pa, 0, PGSIZE);
     r = (struct run*)pa;
     acquire(&kmem.lock);
     r->next = kmem.freelist;
@@ -122,7 +130,8 @@ kalloc(void)
   release(&kmem.lock);
 
   if(r){
-    memset((char*)r, 5, PGSIZE); // fill with junk
+    addMap((uint64)r);
+    memset((char*)r, 0, PGSIZE); // fill with junk
   }
     
   return (void*)r;

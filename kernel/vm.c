@@ -160,8 +160,6 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
     if(*pte & PTE_V)
       panic("remap");
     *pte = PA2PTE(pa) | perm | PTE_V;
-    //add map number 
-    addMap(pa);
     if(a == last)
       break;
     a += PGSIZE;
@@ -326,13 +324,8 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     // disable write and add cow flag 
     flags = ((flags & (~PTE_W)) | PTE_COW);
     // do not alloc new memory 
-    /*
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    */
+    addMap((uint64)pa);
     if(mappages(new, i, PGSIZE, pa, flags) != 0){
-      //kfree(mem);
       goto err;
     }
   }
@@ -391,9 +384,34 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 
   while(len > 0){
     va0 = PGROUNDDOWN(srcva);
+    if (va0 >= MAXVA)
+      return -1;
+    if (check_cow(pagetable, va0)!=0)
+      return -1;
+    handle_cow(pagetable,va0);
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
+    pte_t * pte = walk(pagetable,va0,0);
+    // copyin function do not check the pte_w of the srcva
+      if ((*pte) & PTE_COW){
+        // handle real cow write 
+        printf("handle cow in copyin: %p, pte:%p \n",va0, *pte);
+        char *mem;
+        if ((mem= kalloc())==0){
+          printf("kalloc in cow error\n");
+          return -1;
+        }
+        memmove(mem, (char*)pa0, PGSIZE);
+        uint64 flags = PTE_FLAGS(*pte);
+        flags = (flags | PTE_W )& (~PTE_COW);// enable write, disable cow flag 
+        kfree((void *) pa0);
+        addMap((uint64)mem);
+        *pte = PA2PTE((uint64)mem) | flags;
+        //printf("va:%p remap from %p to %p ", va, pa,mem);
+      }
+        
+    
     n = PGSIZE - (srcva - va0);
     if(n > len)
       n = len;
