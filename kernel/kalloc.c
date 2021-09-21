@@ -22,11 +22,54 @@ struct {
   struct spinlock lock;
   struct run *freelist;
 } kmem;
+struct {
+  struct spinlock lock ;
+  int  pageMapNum[PHYSTOP/PGSIZE];
+} pgMap;
+
+
+void 
+addMap(uint64 pa){
+  pa = PGROUNDDOWN(pa);
+  if (pa<PHYSTOP){
+    acquire(&pgMap.lock);
+    pgMap.pageMapNum[pa/PGSIZE]++;
+    release(&pgMap.lock);
+  }
+
+}
+void 
+subMap(uint64 pa){
+  pa = PGROUNDDOWN(pa);
+  if (pa<PHYSTOP){
+    acquire(&pgMap.lock);
+    pgMap.pageMapNum[pa/PGSIZE]--;
+    release(&pgMap.lock);
+  }
+}
+int 
+getMap(uint64 pa){
+  int n =-1;
+  pa = PGROUNDDOWN(pa);
+  if (pa<PHYSTOP){
+    acquire(&pgMap.lock);
+    n = pgMap.pageMapNum[pa/PGSIZE];
+    release(&pgMap.lock);
+  }
+  return n ;
+}
 
 void
 kinit()
 {
   initlock(&kmem.lock, "kmem");
+  // add page mapping numbers lock 
+  initlock(&pgMap.lock,"page mapping number");
+  //pgMap.pageMapNum[PHYSTOP/PGSIZE] = 0;
+  for (int i = 0; i < PGROUNDUP(PHYSTOP) / PGSIZE; i++){
+    pgMap.pageMapNum[i] = 0;
+  }
+
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -50,16 +93,18 @@ kfree(void *pa)
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
-
+  int mapn = getMap((uint64)pa);
+  if (mapn>1){
+    subMap((uint64)pa);
+    return ;
+  }
   // Fill with junk to catch dangling refs.
-  memset(pa, 1, PGSIZE);
-
-  r = (struct run*)pa;
-
-  acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  release(&kmem.lock);
+    memset(pa, 1, PGSIZE);
+    r = (struct run*)pa;
+    acquire(&kmem.lock);
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+    release(&kmem.lock);
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -76,7 +121,9 @@ kalloc(void)
     kmem.freelist = r->next;
   release(&kmem.lock);
 
-  if(r)
+  if(r){
     memset((char*)r, 5, PGSIZE); // fill with junk
+  }
+    
   return (void*)r;
 }
