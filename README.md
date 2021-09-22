@@ -84,4 +84,5 @@
         2. but add the page counter 
     6. free physical page 
         1. if page counter >1: decrease counter 
-        2. if page counter =1; decrease counter and add this page to free list 
+        2. if page counter =1; decrease counter and add this page to free list
+    7. modify the copyin function
