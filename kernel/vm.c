@@ -322,8 +322,10 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
     // disable write and add cow flag 
-    flags = ((flags & (~PTE_W)) | PTE_COW);
-    // do not alloc new memory 
+    flags = flags | PTE_COW;
+    flags = flags  & (~PTE_W);
+    *pte = PA2PTE(pa) | flags;
+    // do not alloc new memory, 
     addMap((uint64)pa);
     if(mappages(new, i, PGSIZE, pa, flags) != 0){
       goto err;

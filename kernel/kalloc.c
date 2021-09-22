@@ -8,7 +8,7 @@
 #include "spinlock.h"
 #include "riscv.h"
 #include "defs.h"
-static uint64 pgNumber = PHYSTOP>>12;
+
 void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
@@ -22,6 +22,7 @@ struct {
   struct spinlock lock;
   struct run *freelist;
 } kmem;
+
 struct {
   struct spinlock lock ;
   int  pageMapNum[PHYSTOP>>12];
@@ -66,6 +67,8 @@ getMap(uint64 pa){
 void
 kinit()
 {
+  uint pgNumber = PHYSTOP >>12;
+  printf("pystop:%p \n",PHYSTOP);
   initlock(&kmem.lock, "kmem");
   // add page mapping numbers lock 
   initlock(&pgMap.lock,"page mapping number");
