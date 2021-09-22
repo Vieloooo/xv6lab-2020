@@ -124,7 +124,7 @@ int handle_cow(pagetable_t pt,uint64 va){
     uint64 pa = PTE2PA(*pte);
     char *mem;
     if ((mem=kalloc())==0){
-      printf("no memory for kalloc");
+      //printf("no memory for kalloc");
       return -1;
     }
     memmove(mem,(char*)pa,PGSIZE);

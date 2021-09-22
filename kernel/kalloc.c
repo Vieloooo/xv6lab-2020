@@ -62,7 +62,7 @@ getMap(uint64 pa){
 void resetMap(){
   uint64 pgNumber = PHYSTOP >>12;
     acquire(&pgMap.lock);
-    for (int i = 0; i <pgNumber; i++){
+    for (uint64 i = 0; i <pgNumber; i++){
       pgMap.pageMapNum[i] = 0;
     }
     release(&pgMap.lock);
@@ -82,7 +82,7 @@ void
 freerange(void *pa_start, void *pa_end)
 {
   char *p;
-  printf("free from %p to %p\n",pa_start,pa_end);
+  //printf("free from %p to %p\n",pa_start,pa_end);
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE){
     addMap((uint64)p);
