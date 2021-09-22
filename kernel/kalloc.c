@@ -59,35 +59,36 @@ getMap(uint64 pa){
   }
   return n ;
 }
-
+void resetMap(){
+  uint64 pgNumber = PHYSTOP >>12;
+    acquire(&pgMap.lock);
+    for (int i = 0; i <pgNumber; i++){
+      pgMap.pageMapNum[i] = 0;
+    }
+    release(&pgMap.lock);
+}
 void
 kinit()
 {
-  uint64 pgNumber = PHYSTOP >>12;
-  printf("pystop:%p \n",PHYSTOP);
   initlock(&kmem.lock, "kmem");
-  // add page mapping numbers lock 
   initlock(&pgMap.lock,"page mapping number");
-  //pgMap.pageMapNum[PHYSTOP/PGSIZE] = 0;
-   
-   
-  for (int i = 0; i <pgNumber; i++){
-    pgMap.pageMapNum[i] = 0;
-  }
+  resetMap();
   freerange(end, (void*)PHYSTOP);
-  for (int i = 0; i< pgNumber ; i++){
-    pgMap.pageMapNum[i] = 0;
-    
-  }
+  resetMap();
+  
 }
 
 void
 freerange(void *pa_start, void *pa_end)
 {
   char *p;
+  printf("free from %p to %p\n",pa_start,pa_end);
   p = (char*)PGROUNDUP((uint64)pa_start);
-  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
+  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE){
+    addMap((uint64)p);
     kfree(p);
+  }
+    
 }
 
 // Free the page of physical memory pointed at by v,
@@ -101,7 +102,7 @@ kfree(void *pa)
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
-  
+    
   subMap((uint64)pa);
 
   if (getMap((uint64)pa) > 0 )
