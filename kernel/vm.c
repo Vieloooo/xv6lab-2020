@@ -321,10 +321,13 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
+    
     // disable write and add cow flag 
-    flags = flags | PTE_COW;
-    flags = flags  & (~PTE_W);
+      flags = flags | PTE_COW;
+      flags = flags  & (~PTE_W);
+    
     *pte = PA2PTE(pa) | flags;
+    
     // do not alloc new memory, 
     addMap((uint64)pa);
     if(mappages(new, i, PGSIZE, pa, flags) != 0){
@@ -388,9 +391,11 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
     va0 = PGROUNDDOWN(srcva);
     if (va0 >= MAXVA)
       return -1;
+    
     if (check_cow(pagetable, va0)!=0)
       return -1;
     handle_cow(pagetable,va0);
+
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;

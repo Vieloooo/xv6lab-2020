@@ -69,10 +69,13 @@ usertrap(void)
     // ok
   } else if(r_scause() == 15 || r_scause() == 13){
     // handle cow 
-     
-     printf("cccoooowwww\n");
+    //printf("cccoooowwww\n");
      uint64 va = r_stval();
       if (va >= MAXVA ){
+        p->killed = 1;
+        goto over;
+      }
+      if (va < PGROUNDDOWN(p->trapframe->sp) && va >=PGROUNDDOWN(p->trapframe->sp) - PGSIZE){
         p->killed = 1;
         goto over;
       }
@@ -81,13 +84,15 @@ usertrap(void)
         p->killed = 1;
         goto over;
       }
-      handle_cow(p->pagetable, va);
+      if (handle_cow(p->pagetable, va) ==-1){
+        p->killed = 1;
+        goto over;
+      }
       
   }else{
     p->killed =1;
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
-    goto over;
   }
 over:
   if(p->killed)
@@ -110,22 +115,24 @@ int check_cow(pagetable_t pt,uint64 va){
   return 0;
 }
 
-// handler for cow 
-void handle_cow(pagetable_t pt,uint64 va){
+// handler for cow, mapp va to a new page 
+int handle_cow(pagetable_t pt,uint64 va){
   pte_t *pte = walk(pt,va,0);
    if (*pte & PTE_COW){
-    pte_t *pte = walk(pt,va,0);
+
     uint64 flags = PTE_FLAGS(*pte);
     uint64 pa = PTE2PA(*pte);
     char *mem;
     if ((mem=kalloc())==0){
-      panic("no memory for kalloc");
+      printf("no memory for kalloc");
+      return -1;
     }
     memmove(mem,(char*)pa,PGSIZE);
-    flags = (flags | PTE_W) & (PTE_COW);
+    flags = (flags | PTE_W) & (~PTE_COW);
     kfree((void*)pa);
     *pte = PA2PTE((uint64)mem) | flags;
    }
+   return 0;
   
 }
 //

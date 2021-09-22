@@ -28,10 +28,8 @@ struct {
   int  pageMapNum[PHYSTOP>>12];
 } pgMap;
 
-
 void 
 addMap(uint64 pa){
-  pa = PGROUNDDOWN(pa);
   if (pa<PHYSTOP){
     acquire(&pgMap.lock);
     pgMap.pageMapNum[pa>>12]++;
@@ -43,7 +41,6 @@ addMap(uint64 pa){
 }
 void 
 subMap(uint64 pa){
-  pa = PGROUNDDOWN(pa);
   if (pa<PHYSTOP){
     acquire(&pgMap.lock);
     pgMap.pageMapNum[pa>>12]--;
@@ -55,7 +52,6 @@ subMap(uint64 pa){
 int 
 getMap(uint64 pa){
   int n =-1;
-  pa = PGROUNDDOWN(pa);
   if (pa<PHYSTOP){
     acquire(&pgMap.lock);
     n = pgMap.pageMapNum[pa>>12];
@@ -67,7 +63,7 @@ getMap(uint64 pa){
 void
 kinit()
 {
-  uint pgNumber = PHYSTOP >>12;
+  uint64 pgNumber = PHYSTOP >>12;
   printf("pystop:%p \n",PHYSTOP);
   initlock(&kmem.lock, "kmem");
   // add page mapping numbers lock 
@@ -105,7 +101,9 @@ kfree(void *pa)
 
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
+  
   subMap((uint64)pa);
+
   if (getMap((uint64)pa) > 0 )
     return;
   
