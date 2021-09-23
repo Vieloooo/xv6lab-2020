@@ -466,6 +466,7 @@ scheduler(void)
     
     int nproc = 0;
     for(p = proc; p < &proc[NPROC]; p++) {
+      //
       acquire(&p->lock);
       if(p->state != UNUSED) {
         nproc++;
@@ -480,6 +481,9 @@ scheduler(void)
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.
+        // This is the true entry for the scheduler from sched function call. 
+        // so how about first time ? 
+        // c. proc flag indicates that which proc are running
         c->proc = 0;
       }
       release(&p->lock);
@@ -491,7 +495,8 @@ scheduler(void)
   }
 }
 
-// Switch to scheduler.  Must hold only p->lock
+// Switch to scheduler.  Must hold only p->lock   why ?????????
+    // because the scheduler will release the lock in the entry of scheduler 
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
 // kernel thread, not this CPU. It should
@@ -526,6 +531,7 @@ yield(void)
   acquire(&p->lock);
   p->state = RUNNABLE;
   sched();
+  
   release(&p->lock);
 }
 
@@ -577,7 +583,7 @@ sleep(void *chan, struct spinlock *lk)
   // Tidy up.
   p->chan = 0;
 
-  // Reacquire original lock.
+  // Reacquire original lock when wake up 
   if(lk != &p->lock){
     release(&p->lock);
     acquire(lk);
