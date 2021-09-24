@@ -5,7 +5,6 @@
 #include <pthread.h>
 
 static int nthread = 1;
-static int round = 0;
 
 struct barrier {
   pthread_mutex_t barrier_mutex;
@@ -20,16 +19,30 @@ barrier_init(void)
   assert(pthread_mutex_init(&bstate.barrier_mutex, NULL) == 0);
   assert(pthread_cond_init(&bstate.barrier_cond, NULL) == 0);
   bstate.nthread = 0;
+  bstate.round = 0;
+  
 }
 
 static void 
 barrier()
 {
-  // YOUR CODE HERE
-  //
-  // Block until all threads have called barrier() and
-  // then increment bstate.round.
-  //
+  // add nthread 
+  pthread_mutex_lock(&bstate.barrier_mutex);
+  bstate.nthread++;
+  if (bstate.nthread>=nthread){
+    //add round and wake all threads up 
+    bstate.round++;
+    bstate.nthread = 0;
+    pthread_mutex_unlock(&bstate.barrier_mutex);
+    pthread_cond_broadcast(&bstate.barrier_cond);
+  } else{
+    //sleep and wait for the condition call, 
+    // in wait(), it will unlock before sleep and lock before wake up 
+    pthread_cond_wait(&bstate.barrier_cond, &bstate.barrier_mutex);
+    pthread_mutex_unlock(&bstate.barrier_mutex);
+  }
+ 
+  
   
 }
 
@@ -50,7 +63,7 @@ thread(void *xa)
   return 0;
 }
 
-int
+int 
 main(int argc, char *argv[])
 {
   pthread_t *tha;
