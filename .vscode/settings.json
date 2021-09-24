@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "defs.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "pthread.h": "c"
     }
 }
