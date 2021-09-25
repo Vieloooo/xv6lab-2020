@@ -88,3 +88,6 @@
     7. modify the copyin function
 7. thread PASS
     1. an esay lab
+8. lock 
+    1. the accquire() function will disable the interrupt, so if a user call accquire can held the cpu forever?
+    
