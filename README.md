@@ -88,14 +88,21 @@
     7. modify the copyin function
 7. thread PASS
     1. an esay lab
-8. lock 
+8. lock PASS
     1. the accquire() function will disable the interrupt, so if a user call accquire can held the cpu forever?
-    2. ex1,memory allocator's module:
+    2. ex1,memory allocator's model:
     ```
     ------------------------------------------------------
     ----------|| BIG FREE LIST POOL ||--------------------
     --------/------/-------|----\-----\......---------------
     -----|CPU1|-|CPU2|---|CUP3|--|.........|------------------
-    if cpu i run out of memory, borrow from BIG FREE LIST POOL 
-    if big pool run out of memory, withdraw some pages from cpu to BIG pool
+    if cpu i run out of memory, borrow PERALLOC pages from BIG FREE LIST POOL(if sizeof(BIG POOL) < PERALLOC, borrow all the big pool had) 
+    if big pool run out of memory, withdraw (X) pages from cpu.
     ```
+    3. ex2, buffer cache
+        1. use a new model, a simpler model on hash table (compared with memory allocator model):
+        ```
+         - allocate 13 buckets, each bucket holds a bcache head and a bcache lock.
+         - if a bucket K runs out of free buffer, just borrow a free buffer from other buckets
+         - the borrow order is : (K+1) mod 13, (K+2) mod 13, ...., (K+12) mod 13
+         ```
