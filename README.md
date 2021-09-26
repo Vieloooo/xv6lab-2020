@@ -90,4 +90,12 @@
     1. an esay lab
 8. lock 
     1. the accquire() function will disable the interrupt, so if a user call accquire can held the cpu forever?
-    
+    2. ex1,memory allocator's module:
+    ```
+    ------------------------------------------------------
+    ----------|| BIG FREE LIST POOL ||--------------------
+    --------/------/-------|----\-----\......---------------
+    -----|CPU1|-|CPU2|---|CUP3|--|.........|------------------
+    if cpu i run out of memory, borrow from BIG FREE LIST POOL 
+    if big pool run out of memory, withdraw some pages from cpu to BIG pool
+    ```
