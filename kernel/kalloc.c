@@ -9,7 +9,7 @@
 #include "riscv.h"
 #include "defs.h"
 
-#define PERALLOC 100
+#define PERALLOC 1000
 #define MAXSTORE 500
 void freerange(void *pa_start, void *pa_end);
 
@@ -99,7 +99,7 @@ int allocFreelist(int i){
     }
     release(&kmem.lock);
     get = allocFreelist(i);
-    return get ;
+    return get;
   }else if(kmem.size >=PERALLOC){
     acquire(&kmemPerCPU[i].lock);
     kmemPerCPU[i].size += PERALLOC;
@@ -118,9 +118,10 @@ int allocFreelist(int i){
     kmemPerCPU[i].size += kmem.size;
     kmemPerCPU[i].freelist= r;
     release(&kmemPerCPU[i].lock);
+    get = kmem.size;
     kmem.size =0;
     kmem.freelist =0;
-    get = kmem.size;
+    
   }
   release(&kmem.lock);
   return get;
@@ -204,12 +205,14 @@ kalloc(void)
   pop_off();
   acquire(&kmemPerCPU[id].lock);
   
-  if(kmemPerCPU[id].size <1){
+  if(kmemPerCPU[id].size <=0){
+    //printf("cpu %d ran out of memory\n",id);
     release(&kmemPerCPU[id].lock);
     // no lock was held 
-    if (allocFreelist(id)==0){
-      
-      return r;
+    int get = allocFreelist(id);
+    //printf("cpu %d get %d mem\n",id,get);
+    if (get ==0){
+      return 0 ;
     }
     r = kalloc();
   }else{

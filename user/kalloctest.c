@@ -17,7 +17,7 @@ char buf[SZ];
 int
 main(int argc, char *argv[])
 {
-  //test1();
+  test1();
   test2();
   exit(0);
 }
@@ -106,9 +106,7 @@ void test2() {
     printf("test2 FAILED: cannot allocate enough memory");
     exit(-1);
   }
-  for (int i = 0; i < 100; i++) {
-    printf("start : %dfree mem: %d\n",sbrk(0),countfree());
-  }
+  
   printf("\ntest2 OK\n");  
   for (int i = 0; i < 50; i++) {
     free1 = countfree();
