@@ -6,7 +6,7 @@ int main(int argc,char *argv[]){
     char *fake_argv[32]={0};
     char fake[32]={0};
     int k=0;//index in fake
-    int j,i;//loop params
+    int j,i;
     int m=argc-1;//index in fake argv
     char *p2lastarg=fake;//pionter to last fake arg
     //read data from fd 0 and check read 
@@ -29,6 +29,7 @@ int main(int argc,char *argv[]){
             echo hello|xargs echo gg
                 there is no' 'in the end of stdin,the stdin is [hello\0eof], 
                 so how the proc recognize eof as ' ' ,and add the last arguement?
+                ans: len(buff) == 1
             */
             fake[k++]=0;
             fake_argv[m++]=p2lastarg; 
