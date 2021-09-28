@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
         printf("input error\nCorrect usage :sleep [time]\n");
         exit(0);
     }
-    printf("%d\n",sizeof(uint16));
     int time = atoi(argv[1]);
     sleep(time);
     exit(0);

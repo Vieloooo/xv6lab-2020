@@ -15,6 +15,11 @@ int main(int argc,char *argv[]){
         printf("no stdinput\n");
         exit(0);
     }
+    if (buff[buff_len-1]!= '\n'){
+        
+        buff_len ++;
+        buff[buff_len-1] = '\n';
+    }
     //put argv1-n in fake_argv 0-n-1
     for(j=1;j<argc;j++){
         fake_argv[j-1]=argv[j];
@@ -27,7 +32,7 @@ int main(int argc,char *argv[]){
             //question: how the proc adds the last arguement to fake_argv
             /*for examle: 
             echo hello|xargs echo gg
-                there is no' 'in the end of stdin,the stdin is [hello\0eof], 
+                there is no'\n'in the end of stdin,the stdin is [hello\0eof], 
                 so how the proc recognize eof as ' ' ,and add the last arguement?
                 ans: len(buff) == 1
             */

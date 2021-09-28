@@ -9,19 +9,33 @@
 */
 int main(int argc, char *argv[])
 {
-    char buff[32] = {0};
-    char *fake_argv[32] = {0};
-    char fake[32] = {0};
+    char buff[33] = {0};
+    char *fake_argv[33] = {0};
+    char fake[33] = {0};
     int k = 0;              //index in fake
     int j, i;               //loop params
     int m = argc - 1;       //index in fake argv
     char *p2lastarg = fake; //pionter to last fake arg
     //read data from fd 0 and check read
+    char i;
+    while(read(0,&i,sizeof(i))){
+        printf("%d/n",i);
+    }
+    /*
+    printf(" buflen%d\n",buff_len);
     int buff_len = read(0, buff, sizeof(buff));
+    printf(" buflen%d\n",buff_len);
     if (buff_len == 0)
     {
         printf("no stdinput\n");
         exit(0);
+    }
+    printf("exe xarg\n");
+    
+    if (buff[buff_len-1]!= '\n'){
+        
+        buff_len ++;
+        buff[buff_len-1] = '\n';
     }
     //put argv 1->n in fake_argv 0->n-1
     for (j = 1; j < argc; j++)
@@ -70,6 +84,6 @@ int main(int argc, char *argv[])
             fake[k++] = buff[i];
         }
     }
-
+*/
     exit(0);
 }
