@@ -165,6 +165,7 @@ bad:
   return -1;
 }
 
+
 // Is the directory dp empty except for "." and ".." ?
 static int
 isdirempty(struct inode *dp)
@@ -282,6 +283,27 @@ create(char *path, short type, short major, short minor)
 
   return ip;
 }
+struct inode * fetchSym(char *path, int depth){
+  if (depth > 8){
+    return 0;
+  }
+  struct inode *ip;
+  if((ip = namei(path)) == 0){
+    return 0;
+  }
+  ilock(ip);
+  if(ip->type==T_SYMLINK ){	    
+    char next[MAXPATH];
+    if(readi(ip,0,(uint64)next,ip->size-MAXPATH ,MAXPATH) == 0 ) {
+	    iunlock(ip);
+	    return 0;
+    }
+    iunlock(ip);
+    return  fetchSym(next, depth+1 );
+  }
+  iunlock(ip);
+  return ip;
+}
 
 uint64
 sys_open(void)
@@ -304,10 +326,19 @@ sys_open(void)
       return -1;
     }
   } else {
-    if((ip = namei(path)) == 0){
-      end_op();
-      return -1;
+    if(omode & O_NOFOLLOW){
+      //printf("open a path not follow\n");
+        if((ip = namei(path)) == 0){
+        end_op();
+        return -1;
+      }
+    }else{
+      if((ip = fetchSym(path,0)) == 0){
+        end_op();
+        return -1;
+      }
     }
+    
     ilock(ip);
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
@@ -483,4 +514,55 @@ sys_pipe(void)
     return -1;
   }
   return 0;
+}
+
+// my code bellow ------------------------------
+uint64 sys_symlink(void){
+  
+  char name[DIRSIZ], new[MAXPATH], old[MAXPATH];
+  struct inode *dp, *ip;
+
+  if(argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)
+    return -1;
+  begin_op();
+  //printf("from %s to %s\n", old,new);
+  ip = namei(old);
+  dp = namei(new);
+  if ( ip !=0 && ip->type != T_DIR ){
+    // add a link to the old path
+    ilock(ip);
+    ip->nlink++;
+    iupdate(ip);
+    iunlockput(ip);
+  }
+  if (dp==0){
+    //fsprintf("dp is null\n");
+    if (nameiparent(new,name)==0){
+      printf("a null path under a null parent\n");
+      goto bad;
+    }
+    if((dp= create(new,T_SYMLINK,0,0)) == 0){
+      printf("error in create symlink block in \n");
+      goto bad;
+    }
+    iunlock(dp);
+  }
+  ilock(dp);
+  // dp holds the new path inode 
+  if(writei(dp,0,(uint64)old,dp->size,MAXPATH) != MAXPATH){
+    printf("write error in symlink\n");
+    iunlock(dp);
+    goto bad;
+  }
+  //printf("%d -> %d\n", dp->inum, );
+  dp->type=T_SYMLINK;
+  iunlockput(dp);
+  end_op();
+
+  return 0;
+//must release all inode lock before going to bad 
+bad:
+  end_op();
+  return -1;
+  
 }
