@@ -106,3 +106,11 @@
          - if a bucket K runs out of free buffer, just borrow a free buffer from other buckets
          - the borrow order is : (K+1) mod 13, (K+2) mod 13, ...., (K+12) mod 13
          ```
+9. fs PASS 
+    1. memory allocator
+        an easy lab, which is quite similar with page table 
+    2. symbolic link 
+        crux problem: how to detect a loop in symbolic link?
+        - detect same path name? NO  a-->b, b ->/xxxx/a, different name, same inode
+        - detect same inode and dev? NO if symlink(b(null), a(null)), then symlink(a(x), b(null)). In this sisuation,although having a loop (a->b->a), but a.inode.prev = null != a.inode.now = y. 
+        - use max redirect times? OK, but with problems, it's difficult to find a proper max redirect time, and it is not 100% accurate. 
