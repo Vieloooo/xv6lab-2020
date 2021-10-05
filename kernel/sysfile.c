@@ -488,7 +488,7 @@ sys_pipe(void)
 
 uint64
 sys_mmap(void){
-  printf("call mmap succeed\n");
+  //printf("call mmap succeed\n");
   //read arguement 
   int size, prot, flags,fd;
   if(argint(1, &size) < 0)
@@ -499,7 +499,7 @@ sys_mmap(void){
     return -1;
   if(argint(4,&fd) < 0)
     return -1;
-  printf("size:%d, prot%d,flag%d,fd%d\n",size,prot,flags,fd);
+  //printf("size:%d, prot%d,flag%d,fd%d\n",size,prot,flags,fd);
 
   //save args to pcb, and add ref 
   struct proc *p = myproc();
@@ -540,7 +540,7 @@ sys_mmap(void){
 
   //alloc a vma 
   struct vma *v = vmaAlloc();
-  printf("alloc a vma ok\n");
+  //printf("alloc a vma ok\n");
   if (v==0){
     printf("no vma block remain\n");
     return -1;
@@ -577,51 +577,7 @@ sys_mmap(void){
   
   return v->start;
 }
-// Write to file f.
-// addr is a user virtual address.
-int
-writebackPage(struct file *f, uint64 addr, int n,int myoff)
-{
-  int r, ret = 0;
 
-  if(f->writable == 0)
-    return -1;
-
-   if(f->type == FD_INODE){
-     printf("this is file\n");
-    // write a few blocks at a time to avoid exceeding
-    // the maximum log transaction size, including
-    // i-node, indirect block, allocation blocks,
-    // and 2 blocks of slop for non-aligned writes.
-    // this really belongs lower down, since writei()
-    // might be writing a device like the console.
-    int max = ((MAXOPBLOCKS-1-1-2) / 2) * BSIZE;
-    int i = 0;
-    while(i < n){
-      int n1 = n - i;
-      if(n1 > max)
-        n1 = max;
-
-      begin_op();
-      ilock(f->ip);
-      printf("write %d bytes from va %p at offset %d\n",n1,addr+i,myoff);
-      if ((r = writei(f->ip, 1, addr + i, myoff, n1)) > 0)
-        myoff += r;
-      iunlock(f->ip);
-      end_op();
-      printf("end op\n");
-      if(r != n1){
-        // error from writei
-        break;
-      }
-      i += r;
-    }
-    ret = (i == n ? n : -1);
-  } else {
-    return -1;
-  }
-  return ret;
-}
 
 uint64
 sys_munmap(void){
@@ -639,7 +595,7 @@ sys_munmap(void){
   struct vma *pv = 0;
   uint64 vaEnd ;
   while(v != 0){
-    printf("v %p, next %p \n", v,v->next);
+    //printf("v %p, next %p \n", v,v->next);
     if(va >= v->start && va < v->end){
       goto good ;
     }
@@ -663,7 +619,7 @@ good:
     if (vaEnd == v->end){
       //free all mapping 
       //free this vma to pool 
-      fileclose(v->f);
+      //fileclose(v->f);
       v->start = 0;
       v->end = 0;
       if(pv==0){
@@ -681,10 +637,7 @@ good:
     //free a part of the end 
     v->end = va;
   }
-  acquire(&v->lock);
-  v->length = v->end -v->start;
-  release(&v->lock);
-  printf("after unmap %p,%p\n",v->start,v->end);
+
   
   //write back [va,vaEnd] to fs
   pte_t * pte;
@@ -698,6 +651,12 @@ good:
   }
   //free unmap pages 
   uvmunmap(p->pagetable,va,(vaEnd -va)/PGSIZE,1);
-  
+  if(v->start == v->end){
+    fileclose(v->f);
+  }
+  acquire(&v->lock);
+  v->length = v->end -v->start;
+  release(&v->lock);
+  printf("after unmap %p,%p\n",v->start,v->end);
   return 0;
 }

@@ -5,7 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-
+#include "fcntl.h"
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -308,7 +308,33 @@ fork(void)
   pid = np->pid;
 
   np->state = RUNNABLE;
-
+  //modification bellow 
+  np->vp = 0;
+  struct vma * pv= p->vp;
+  struct vma * prev = 0;        //prev vma pointer for child process 
+  // copy parents vma to child 
+  while(pv){
+    
+    struct vma *vma = vmaAlloc();
+    printf("copy from %p to %p\n", pv,vma);
+    vma->start = pv->start;
+    vma->end = pv->end;
+    acquire(&vma->lock);
+    vma->length = pv->length;
+    release(&vma->lock);
+    vma->prot = pv->prot;
+    vma->flags = pv->flags;
+    vma->f = pv->f;
+    filedup(vma->f);
+    vma->next = 0;
+    if(prev == 0){
+      np->vp = vma;
+    }else{
+      prev->next = vma;
+    }
+    prev = vma;
+    pv = pv->next;
+  }
   release(&np->lock);
 
   return pid;
@@ -350,6 +376,32 @@ exit(int status)
 
   if(p == initproc)
     panic("init exiting");
+
+  //write back all file 
+  struct vma* v = p->vp;
+  struct vma* pv;
+  while(v){
+    //write back [va,vaEnd] to fs
+    pte_t * pte;
+    if( (v->prot & PTE_W) && (v->flags & MAP_SHARED)  ){
+      for (uint64 addr = v->start; addr <v->end; addr+= PGSIZE){
+        pte = walk(p->pagetable,addr,0);
+        if (pte !=0 && (*pte & PTE_D)){
+          writebackPage(v->f,addr,PGSIZE,addr - v->rootva);
+        }
+      }
+    }
+    //free unmap pages 
+    uvmunmap(p->pagetable,v->start,(v->end - v->start)/PGSIZE,1);
+    fileclose(v->f);
+    pv = v->next;
+    v->next = 0;
+    acquire(&v->lock);
+    v->length = 0;
+    release(&v->lock);
+    v = pv;
+
+  }
 
   // Close all open files.
   for(int fd = 0; fd < NOFILE; fd++){

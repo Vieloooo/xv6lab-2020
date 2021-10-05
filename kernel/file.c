@@ -228,3 +228,46 @@ found:
 
   return 0;
 }
+int
+writebackPage(struct file *f, uint64 addr, int n,int myoff)
+{
+  int r, ret = 0;
+
+  if(f->writable == 0)
+    return -1;
+
+   if(f->type == FD_INODE){
+     printf("this is file\n");
+    // write a few blocks at a time to avoid exceeding
+    // the maximum log transaction size, including
+    // i-node, indirect block, allocation blocks,
+    // and 2 blocks of slop for non-aligned writes.
+    // this really belongs lower down, since writei()
+    // might be writing a device like the console.
+    int max = ((MAXOPBLOCKS-1-1-2) / 2) * BSIZE;
+    int i = 0;
+    while(i < n){
+      int n1 = n - i;
+      if(n1 > max)
+        n1 = max;
+
+      begin_op();
+      ilock(f->ip);
+      printf("write %d bytes from va %p at offset %d\n",n1,addr+i,myoff);
+      if ((r = writei(f->ip, 1, addr + i, myoff, n1)) > 0)
+        myoff += r;
+      iunlock(f->ip);
+      end_op();
+      printf("end op\n");
+      if(r != n1){
+        // error from writei
+        break;
+      }
+      i += r;
+    }
+    ret = (i == n ? n : -1);
+  } else {
+    return -1;
+  }
+  return ret;
+}

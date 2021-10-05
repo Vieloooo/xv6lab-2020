@@ -282,7 +282,7 @@ fork_test(void)
 
   int status = -1;
   wait(&status);
-
+  //printf("ddddddddddddd\n");
   if(status != 0){
     printf("fork_test failed\n");
     exit(1);

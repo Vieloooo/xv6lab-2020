@@ -34,6 +34,7 @@ int             fileread(struct file*, uint64, int n);
 int             filestat(struct file*, uint64 addr);
 int             filewrite(struct file*, uint64, int n);
 int             mmapHandler(uint64 ,uint64);
+int             writebackPage(struct file *, uint64 , int ,int );
 // fs.c
 void            fsinit(int);
 int             dirlink(struct inode*, char*, uint);
