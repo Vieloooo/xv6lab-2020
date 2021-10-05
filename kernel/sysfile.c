@@ -508,7 +508,7 @@ sys_mmap(void){
     return -1;
   }
   struct file * f = p->ofile[fd];
-  printf("current vma entry %d\n",p->vp);
+  //printf("current vma entry %d\n",p->vp);
   if (f==0){
     return -1;
   }
@@ -573,7 +573,7 @@ sys_mmap(void){
   
   //lazy alloc mem in user, cause usert trap 13/15 
   p->sz = v->end;
-  printf("map from %p to %p\n ",v->start,v->end);
+  printf("map from %p to %p\n",v->start,v->end);
   
   return v->start;
 }

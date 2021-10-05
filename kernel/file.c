@@ -224,7 +224,7 @@ found:
   ilock(fl->ip);
   readi(fl->ip, 0, (uint64)mem, PGROUNDDOWN(va) - v->start, PGSIZE);
   iunlock(fl->ip);
-  printf("load va %p 's in memory from fs\n",va);
+  printf("load va %p 's data in memory from fs\n",va);
 
   return 0;
 }
