@@ -114,3 +114,9 @@
         - detect same path name? NO  a-->b, b ->/xxxx/a, different name, same inode
         - detect same inode and dev? NO if symlink(b(null), a(null)), then symlink(a(x), b(null)). In this sisuation,although having a loop (a->b->a), but a.inode.prev = null != a.inode.now = y. 
         - use max redirect times? OK, but with problems, it's difficult to find a proper max redirect time, and it is not 100% accurate. 
+10. mmap PASS
+    1. the most complicated lab out of ten 
+    2. vma collection, free a vma node to the vma pool when all vitural address  in that vma are unmapped.  
+    3. use reserved pte bits to mark mmap virtual address 
+    4. use dirty bit to write data back to fs 
+    5. PRoblem? how to achieve the consistence when multi process mmaping same file. 
