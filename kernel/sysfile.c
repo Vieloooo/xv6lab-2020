@@ -484,3 +484,215 @@ sys_pipe(void)
   }
   return 0;
 }
+
+
+uint64
+sys_mmap(void){
+  printf("call mmap succeed\n");
+  //read arguement 
+  int size, prot, flags,fd;
+  if(argint(1, &size) < 0)
+    return -1;
+  if(argint(2, &prot) < 0)
+    return -1;
+  if(argint(3, &flags) < 0)
+    return -1;
+  if(argint(4,&fd) < 0)
+    return -1;
+  printf("size:%d, prot%d,flag%d,fd%d\n",size,prot,flags,fd);
+
+  //save args to pcb, and add ref 
+  struct proc *p = myproc();
+  if (fd < 0 || fd > NOFILE){
+    printf("mmap fd out of range\n");
+    return -1;
+  }
+  struct file * f = p->ofile[fd];
+  printf("current vma entry %d\n",p->vp);
+  if (f==0){
+    return -1;
+  }
+  //need lock? 
+  filedup(f);
+  //get start and end 
+  uint64 start = PGROUNDUP(p->sz);
+  if (start + size >= MAXVA){
+    printf("vma too big\n");
+    return -1;
+  }
+  //get flags 
+  int pteFlag = PTE_U | PTE_M;
+  if (prot & PROT_WRITE) {
+    if(f->writable==0 && (flags & MAP_PRIVATE)==0){
+      return -1; 
+    } 
+    pteFlag |= PTE_W;
+  }
+  if (prot & PROT_READ) {
+    if(f->readable==0){
+      return -1; 
+    } 
+    pteFlag |= PTE_R;
+  }
+  if (prot & PROT_EXEC){
+    pteFlag |= PTE_X;
+  }
+
+  //alloc a vma 
+  struct vma *v = vmaAlloc();
+  printf("alloc a vma ok\n");
+  if (v==0){
+    printf("no vma block remain\n");
+    return -1;
+  }
+  //printf("lock dddd      \n");
+  v->pid = p->pid;
+  v->rootva = start;
+  v->start = start;
+  v->end = PGROUNDUP(start + size);
+  acquire(&v->lock);
+  v->length = v->end - v->start;
+  release(&v->lock);
+  v->prot = pteFlag;
+  v->flags = flags;
+  v->f = f;
+  v->next = 0;
+  
+  //add new vma to pcb 
+  struct vma * vp = p->vp;
+  if (vp==0){
+    p->vp = v;
+    printf("l1 vma %d, l2 vma %d\n",p->vp,p->vp->next);
+  }else{
+    while (vp->next!=0){
+      //printf("go down\n");
+      vp = vp->next;
+    }
+    vp->next = v;
+  }
+  
+  //lazy alloc mem in user, cause usert trap 13/15 
+  p->sz = v->end;
+  printf("map from %p to %p\n ",v->start,v->end);
+  
+  return v->start;
+}
+// Write to file f.
+// addr is a user virtual address.
+int
+writebackPage(struct file *f, uint64 addr, int n,int myoff)
+{
+  int r, ret = 0;
+
+  if(f->writable == 0)
+    return -1;
+
+   if(f->type == FD_INODE){
+     printf("this is file\n");
+    // write a few blocks at a time to avoid exceeding
+    // the maximum log transaction size, including
+    // i-node, indirect block, allocation blocks,
+    // and 2 blocks of slop for non-aligned writes.
+    // this really belongs lower down, since writei()
+    // might be writing a device like the console.
+    int max = ((MAXOPBLOCKS-1-1-2) / 2) * BSIZE;
+    int i = 0;
+    while(i < n){
+      int n1 = n - i;
+      if(n1 > max)
+        n1 = max;
+
+      begin_op();
+      ilock(f->ip);
+      printf("write %d bytes from va %p at offset %d\n",n1,addr+i,myoff);
+      if ((r = writei(f->ip, 1, addr + i, myoff, n1)) > 0)
+        myoff += r;
+      iunlock(f->ip);
+      end_op();
+      printf("end op\n");
+      if(r != n1){
+        // error from writei
+        break;
+      }
+      i += r;
+    }
+    ret = (i == n ? n : -1);
+  } else {
+    return -1;
+  }
+  return ret;
+}
+
+uint64
+sys_munmap(void){
+  
+  uint64 va;
+  int length;
+  if(argaddr(0, &va) < 0 || argint(1, &length) < 0){
+    return -1;
+  }
+  if (length ==0){
+    return 0;
+  }
+  struct proc *p = myproc();
+  struct vma *v = p->vp;
+  struct vma *pv =0;
+  uint64 vaEnd ;
+  while(v != 0){
+    printf("v %p, next %p \n", v,v->next);
+    if(va >= v->start && va < v->end){
+      goto good ;
+    }
+    pv = v;
+    v = v->next;
+  }
+  printf("addr %p has not been mapped\n",va);
+  return -1;
+  //before going good, v.lock must be held
+good:
+  
+  vaEnd = PGROUNDUP(va +length);
+  va = PGROUNDDOWN(va);
+  printf("unmap from %p to %p\n",va,vaEnd);
+  if (va != v->start && vaEnd!=v->end){
+    printf("unmap in the middle of a whole vma\n");
+    return -1;
+  }
+  
+  if(va == v->start){
+    if (vaEnd == v->end){
+      //free all mapping 
+      //free this vma to pool 
+      fileclose(v->f);
+      v->start = 0;
+      v->end = 0;
+      pv->next = v->next;
+      
+    }else {
+      //free a part of the front
+      v->start = vaEnd;
+    }
+  }else{
+    //free a part of the end 
+    v->end = va;
+  }
+  acquire(&v->lock);
+  v->length = v->end -v->start;
+  release(&v->lock);
+  printf("after unmap %p,%p\n",v->start,v->end);
+  
+  //write back [va,vaEnd] to fs
+  pte_t * pte;
+  if( (v->prot & PTE_W) && (v->flags & MAP_SHARED)  ){
+    for (uint64 addr = va; addr <vaEnd; addr+= PGSIZE){
+       pte = walk(p->pagetable,addr,0);
+      if (pte !=0 && (*pte & PTE_D)){
+        writebackPage(v->f,addr,PGSIZE,addr - v->rootva);
+      }
+    }
+  }
+  //free unmap pages 
+  uvmunmap(p->pagetable,va,(vaEnd -va)/PGSIZE,1);
+  
+  return 0;
+}

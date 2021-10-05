@@ -9,7 +9,7 @@
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
-
+struct vma vmaPool[MAXMMAP];
 struct proc *initproc;
 
 int nextpid = 1;
@@ -48,6 +48,12 @@ procinit(void)
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
       p->kstack = KSTACK((int) (p - proc));
+      p->vp = 0;
+  }
+  //init vma pool 
+  for (int i =0 ; i<MAXMMAP; i++){
+    initlock(&vmaPool[i].lock,"vmaLock");
+    vmaPool[i].length = 0;
   }
 }
 
@@ -133,7 +139,7 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
-
+  p->vp = 0;
   return p;
 }
 
@@ -157,6 +163,7 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->vp = 0;
 }
 
 // Create a user page table for a given process,
@@ -700,4 +707,15 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+struct vma* vmaAlloc(){
+  for (int i = 0; i<MAXMMAP; i++){
+    acquire(&vmaPool[i].lock);
+    if (vmaPool[i].length ==0){
+      release(&vmaPool[i].lock);
+      return &vmaPool[i];
+    }
+    release(&vmaPool[i].lock);
+  }
+  return 0;
 }

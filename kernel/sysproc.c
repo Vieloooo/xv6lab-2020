@@ -6,7 +6,9 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
-
+//import file head file 
+#include "fcntl.h"
+#include "fs.h"
 uint64
 sys_exit(void)
 {
@@ -14,7 +16,7 @@ sys_exit(void)
   if(argint(0, &n) < 0)
     return -1;
   exit(n);
-  return 0;  // not reached
+  return 0;  // not reachedNfile
 }
 
 uint64
@@ -89,9 +91,9 @@ uint64
 sys_uptime(void)
 {
   uint xticks;
-
   acquire(&tickslock);
   xticks = ticks;
   release(&tickslock);
   return xticks;
 }
+

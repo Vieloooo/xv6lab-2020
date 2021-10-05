@@ -180,3 +180,51 @@ filewrite(struct file *f, uint64 addr, int n)
   return ret;
 }
 
+int mmapHandler(uint64 va, uint64 cause){
+  struct proc *p = myproc();
+  struct vma* v = p->vp;
+  if (va >= MAXVA || va ==0){
+    return -1;
+  }
+  while(v != 0){
+    if(va >= v->start && va < v->end){
+      goto found ;
+    }
+    v = v->next;
+  }
+  printf("addr not in vma\n");
+  return -1;
+found:
+
+  if(cause == 13 && (v->prot & PTE_R)==0){
+    //read unreadable vma
+    return -1; 
+  } 
+  if(cause == 15 && (v->prot & PTE_W)==0){
+    //write unwriteable vma
+    return -1;
+  }
+  acquire(&v->lock);
+  char * mem = kalloc();
+  if (mem==0){
+    printf("no physical memory for vma mapping\n");
+    return -1;
+  }
+  memset(mem,0,PGSIZE);
+  int pteFlags = v->prot ;
+  if (cause == 15){
+    pteFlags |= PTE_D;
+  }
+  if( mappages(p->pagetable,PGROUNDDOWN(va),PGSIZE,(uint64)mem,pteFlags) !=0 ) {
+    kfree(mem);
+    printf("mapping error in mmap trap\n");
+    return -1;
+  }
+  struct file *fl = v->f;
+  ilock(fl->ip);
+  readi(fl->ip, 0, (uint64)mem, PGROUNDDOWN(va) - v->start, PGSIZE);
+  iunlock(fl->ip);
+  printf("load va %p 's in memory from fs\n",va);
+  release(&v->lock);
+  return 0;
+}
