@@ -562,7 +562,7 @@ sys_mmap(void){
   struct vma * vp = p->vp;
   if (vp==0){
     p->vp = v;
-    printf("l1 vma %d, l2 vma %d\n",p->vp,p->vp->next);
+    //printf("l1 vma %d, l2 vma %d\n",p->vp,p->vp->next);
   }else{
     while (vp->next!=0){
       //printf("go down\n");
@@ -636,7 +636,7 @@ sys_munmap(void){
   }
   struct proc *p = myproc();
   struct vma *v = p->vp;
-  struct vma *pv =0;
+  struct vma *pv = 0;
   uint64 vaEnd ;
   while(v != 0){
     printf("v %p, next %p \n", v,v->next);
@@ -666,7 +666,12 @@ good:
       fileclose(v->f);
       v->start = 0;
       v->end = 0;
-      pv->next = v->next;
+      if(pv==0){
+        //only 1 vma 
+        p->vp = 0;
+      }else{
+        pv->next = v->next;
+      }
       
     }else {
       //free a part of the front

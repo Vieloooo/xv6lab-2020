@@ -712,6 +712,7 @@ struct vma* vmaAlloc(){
   for (int i = 0; i<MAXMMAP; i++){
     acquire(&vmaPool[i].lock);
     if (vmaPool[i].length ==0){
+      vmaPool[i].length =1;
       release(&vmaPool[i].lock);
       return &vmaPool[i];
     }

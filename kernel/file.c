@@ -204,7 +204,7 @@ found:
     //write unwriteable vma
     return -1;
   }
-  acquire(&v->lock);
+
   char * mem = kalloc();
   if (mem==0){
     printf("no physical memory for vma mapping\n");
@@ -225,6 +225,6 @@ found:
   readi(fl->ip, 0, (uint64)mem, PGROUNDDOWN(va) - v->start, PGSIZE);
   iunlock(fl->ip);
   printf("load va %p 's in memory from fs\n",va);
-  release(&v->lock);
+
   return 0;
 }
