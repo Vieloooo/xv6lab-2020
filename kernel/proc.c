@@ -32,7 +32,7 @@ procinit(void)
   initlock(&pid_lock, "nextpid");
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
-    /*------stop add k stack on uni kpgtbl 
+    //------stop add k stack on uni kpgtbl 
       // Allocate a page for the process's kernel stack.
       // Map it high in memory, followed by an invalid
       // guard page.
@@ -42,7 +42,7 @@ procinit(void)
       uint64 va = KSTACK((int) (p - proc));
       kvmmap(va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
       p->kstack = va;
-    */
+    
   }
   kvminithart();
 }
@@ -133,9 +133,9 @@ found:
   char *pa = kalloc();
     if(pa == 0)
       panic("kalloc");
-    uint64 va = KSTACK((int) (p - proc));
+    uint64 va = KSTACK(1);
     ukvmmap(p->kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
-    p->kstack = va;
+    //p->kstack = va;
 
 
   // Set up new context to start executing at forkret,
@@ -163,10 +163,11 @@ freeproc(struct proc *p)
   kfree((void*)PTE2PA(*pte));
   p->kstack = 0;
   //free kpgtbl
-  if(p->pagetable)
+  if(p->kpgtbl)
     proc_freekpagetable(p->kpgtbl);
   //reset pcb 
   p->pagetable = 0;
+  p->kpgtbl = 0;
   p->sz = 0;
   p->pid = 0;
   p->parent = 0;
@@ -233,9 +234,6 @@ proc_kpagetable()
 
   // virtio mmio disk interface
   ukvmmap(pagetable,VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
-
-  // CLINT
-  ukvmmap(pagetable,CLINT, CLINT, 0x10000, PTE_R | PTE_W);
 
   // PLIC
   ukvmmap(pagetable,PLIC, PLIC, 0x400000, PTE_R | PTE_W);
@@ -533,6 +531,7 @@ scheduler(void)
   
   c->proc = 0;
   for(;;){
+    printf("gogo\n");
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
     
@@ -546,8 +545,8 @@ scheduler(void)
         p->state = RUNNING;
         c->proc = p;
         //use personel kpgtble 
-        w_satp(MAKE_SATP(p->kpgtbl));
-        sfence_vma();
+        //w_satp(MAKE_SATP(p->kpgtbl));
+        //sfence_vma();
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
