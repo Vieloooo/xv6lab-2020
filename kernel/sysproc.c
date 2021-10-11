@@ -119,7 +119,8 @@ sys_sysinfo(void)
   
   infos.freemem = free_mem();
   infos.nproc = getFreeProc();
-
+  infos.freefd = getFreeFd();
+  printf("freefd :%d\n",infos.freefd);
   if(copyout(p->pagetable, addr, (char *)&infos, sizeof(infos)) < 0)
       return -1;
 

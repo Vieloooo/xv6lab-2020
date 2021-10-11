@@ -18,7 +18,6 @@ struct {
   struct spinlock lock;
   struct file file[NFILE];
 } ftable;
-
 void
 fileinit(void)
 {
@@ -42,6 +41,21 @@ filealloc(void)
   release(&ftable.lock);
   return 0;
 }
+int
+getFreeFd(void)
+{
+  struct proc *p;
+  p = myproc();
+  int num = 0;
+  for(int i  = 0 ; i< NOFILE; i++){
+    if (p->ofile[i] != 0 ) {
+      num++;
+    }
+    
+  }
+  return num;
+  }
+ 
 
 // Increment ref count for file f.
 struct file*
