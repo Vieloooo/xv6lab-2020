@@ -48,7 +48,7 @@ getFreeFd(void)
   p = myproc();
   int num = 0;
   for(int i  = 0 ; i< NOFILE; i++){
-    if (p->ofile[i] != 0 ) {
+    if (p->ofile[i] == 0 ) {
       num++;
     }
     
