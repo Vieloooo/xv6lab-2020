@@ -50,8 +50,8 @@ sys_sbrk(void)
   //printf("pid: %dorigin mem: %d\n", myproc()->pid, addr);
   if (growproc(n) < 0)
     return -1;
-  printf("pid: %d mem add: %d, new mem: %d\n", myproc()->pid, n,myproc()->sz);
-  vmprint(myproc()->pagetable);
+  //printf("pid: %d mem add: %d, new mem: %d\n", myproc()->pid, n, myproc()->sz);
+  //vmprint(myproc()->pagetable);
   return addr;
 }
 

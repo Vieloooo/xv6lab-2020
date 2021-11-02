@@ -553,6 +553,7 @@ void scheduler(void)
     if (found == 0)
     {
       intr_on();
+      kvminithart();
       asm volatile("wfi");
     }
 #else
