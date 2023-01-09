@@ -1,0 +1,5 @@
+所有附加题都在同一个git仓库内完成
+如果要测试某一个附加题，请切换到对应分支（因为该实验无法脱离git一些仓库下的配置文件，不方便分到多个文件夹）
+git checkout lazy/cow/traps/fs/mmap/thread
+
+
