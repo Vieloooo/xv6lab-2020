@@ -5,7 +5,7 @@
     1. fd redirect is the key part in primes. 
 3. syscall PASS (in branch new_syscall)
     1. impliment ps syscall in branch new_syscall
-5. pgtbl NOT FINISH(I do not want to fix endless bugs anymore)
+5. pgtbl PASS
     1. proc.sz is the memory usage for each process (not include trampline and trapframe)
     2. in other word, proc.sz means the biggest user's vitural address -1 that process is currently using except for trapframe and tramplines 
     3. trapframe use 2 pages under VAMAX
